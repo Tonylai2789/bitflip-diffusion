@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Model weights
+*.safetensors
+*.bin
+*.ckpt
+*.pt
+*.pth
+
+# Generated images and raw outputs (run.json logs stay committed)
+*.png
+*.jpg
+*.npy
