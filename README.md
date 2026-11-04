@@ -40,6 +40,9 @@ All results must come from one GPU, one OS environment and one pinned software s
 5. Smoke test: `python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"` should print `True` and `NVIDIA GeForce RTX 5090`.
 6. Pin the stack: `pip freeze > requirements.txt`
 
+To recreate the pinned stack later (new venv or another clone), install from `requirements.txt`. The extra index is needed because the `+cu134` torch build is not on PyPI:
+`pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu134`
+
 ## Clean baseline + determinism check
 
 Run from the repo root. Each run is its own process; seed and step count are pilot placeholders, not protocol decisions.

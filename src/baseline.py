@@ -62,7 +62,8 @@ def environment(device):
         "device": str(device),
         "cpu": platform.processor() or platform.machine(),
         "git_commit": commit,
-        "git_dirty": bool(run_cmd(["git", "status", "--porcelain"])) if commit else None,
+        # Ignore untracked files: earlier runs' logs/ outputs would otherwise mark every later run dirty.
+        "git_dirty": bool(run_cmd(["git", "status", "--porcelain", "--untracked-files=no"])) if commit else None,
     }
     if device.type == "cuda":
         env["gpu"] = torch.cuda.get_device_name(device)
