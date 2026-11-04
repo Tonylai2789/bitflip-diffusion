@@ -1,0 +1,20 @@
+{
+  "run_a": "logs\\seed0_a",
+  "run_b": "logs\\seed0_b",
+  "settings_identical": true,
+  "settings_diff": {},
+  "environment_diff": {
+    "git_dirty": [
+      false,
+      true
+    ]
+  },
+  "samples_bitwise_identical": true,
+  "sha256": [
+    "a5f7d5dd0130373cb1ec44158405470af52736bd3de2907a0f680afea73705c3",
+    "a5f7d5dd0130373cb1ec44158405470af52736bd3de2907a0f680afea73705c3"
+  ],
+  "num_differing_values": 0,
+  "max_abs_diff": 0.0,
+  "png_pixel_mismatches": []
+}
