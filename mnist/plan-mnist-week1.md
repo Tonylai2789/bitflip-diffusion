@@ -1,11 +1,12 @@
 # Plan and work log: MNIST bit-flip study (week of Nov 4 – Nov 9, 2026)
 
 **Audience:** AI coding agents (and people) continuing this work. Written to be read top to bottom with no other context.
-**Human-readable summary:** [`README-mnist-week1.md`](README-mnist-week1.md).
+**Human-readable summary:** [`README.md`](README.md) (in this folder).
+**Paths:** every path in this file is relative to `mnist/`, and commands run from there, unless the path starts with `../`. The repo root (`..`) holds the shared `.venv/`, `.gitignore`, `README.md`, `AGENTS.md` and `CLAUDE.md`. `../cifar10/` is the separate diffusion project.
 **Repo:** `Tonylai2789/bitflip-diffusion`. This plan was written at commit `2484ce4`.
 **Owner:** Tony Lai. Team: Aneesh. Mentor: Parnian Shabani Kamran. PI: Prof. Hussain Al-Asaad (UC Davis).
 **Due:** Monday, Nov 9, 2026.
-**Status:** Planning done, all decisions settled. **No code written yet.** See the [work log](#14-work-log) for the latest state.
+**Status (Nov 8):** Setup done and step 0 passed. `src/bitflip.py` and its hand tests are written. Training (step 1) not started. **Open:** whether the MNIST steps still go ahead after Tony's Nov 8 task change (section 10). See the [work log](#14-work-log) for details.
 
 ---
 
@@ -54,9 +55,9 @@
 
 ## 3. Where things stand
 
-- The repo has `README.md` (diffusion project and research questions), `.gitignore`, `src/baseline.py` and `src/compare_runs.py` (DDPM clean baseline, run on the PC), empty `configs/` and `notebooks/`, and `logs/seed0_a`, `logs/seed0_b` (baseline runs, bitwise identical).
-- `requirements.txt` is pinned for the Windows PC (`torch==2.15.0+cu134`) and will not install on a Mac. **Leave it alone.** The Mac gets `requirements-mac.txt`.
-- No MNIST code exists yet.
+- Since Nov 8 the repo holds two projects. `../cifar10/` is the DDPM work run on the PC: `src/baseline.py` and `src/compare_runs.py` (clean baseline), `logs/seed0_a` and `logs/seed0_b` (bitwise identical), empty `configs/` and `notebooks/`. `mnist/` is this study. The root keeps `README.md` (diffusion project and research questions), `.gitignore`, `AGENTS.md`, `CLAUDE.md` and the shared `.venv/`.
+- `../cifar10/requirements.txt` is pinned for the Windows PC (`torch==2.15.0+cu134`) and will not install on a Mac. **Leave it alone.** The Mac stack is `requirements-mac.txt` in this folder.
+- MNIST code so far: `src/bitflip.py` and `tests/test_bitflip.py` (setup and step 0 done). Steps 1–8 not started.
 - The handoff was checked against the Google Doc on Nov 7: no conflicts. The doc leaves the seed, stream method, preprocessing, training recipe, FP16 margin, training device and plot format open; Tony settled them on Nov 8 (section 4).
 
 ## 4. Settled decisions (Tony, Nov 8, 2026)
@@ -99,7 +100,7 @@ These are not deviations, but state them in the README and the step 7 paragraph.
 
 ## 6. Machine and environment
 
-Measured on Nov 7, 2026 (read-only checks):
+Measured Nov 7–8, 2026:
 
 | Item | Value |
 |---|---|
@@ -107,20 +108,21 @@ Measured on Nov 7, 2026 (read-only checks):
 | macOS | 26.6.2 |
 | Python for this work | `/opt/homebrew/bin/python3.12` (3.12.16). Python 3.12 matches the PC. |
 | Pitfall | Plain `python3` is 3.14.5. Always create the venv with `python3.12`. |
-| venv | Not created yet |
+| venv | `../.venv/` (repo root, shared), created Nov 8: torch 2.15.0 (MPS available), torchvision 0.29.2, numpy 2.5.4, matplotlib 3.11.2, pytest 9.2.0. Full list in `requirements-mac.txt`. |
 
-**Setup commands** (zsh, from the repo root):
+**Setup commands** (zsh, from the repo root; already done on Tony's Mac):
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install torch torchvision numpy matplotlib pytest
 python -c "import platform, torch; print(platform.machine(), torch.__version__, torch.backends.mps.is_available())"
-pip freeze > requirements-mac.txt
+pip freeze > mnist/requirements-mac.txt
+cd mnist
 ```
 
 - The check must print `arm64 <version> True`. `x86_64` means an Intel Python under Rosetta: reinstall an arm64 Python.
-- Reinstall later with `pip install -r requirements-mac.txt`. Put that line in the README.
+- Reinstall later (from the repo root, venv active) with `pip install -r mnist/requirements-mac.txt`. Put that line in the README.
 - Libraries: PyTorch with MPS (same library as the diffusion work, so `src/bitflip.py` carries over), torchvision (MNIST download), numpy, matplotlib, pytest. Not MLX: the injector would need rewriting for diffusers next week.
 
 ## 7. Planned files
@@ -129,13 +131,13 @@ Simplify if it can be smaller.
 
 | Path | Contents | Committed? |
 |---|---|---|
-| `src/bitflip.py` | `flip`, `restore`, `fingerprint`, bit-field names. Reused for the DDPM next week. | yes |
-| `tests/test_bitflip.py` | Hand tests on CPU and MPS | yes |
-| `src/mnist_fault.py` | Subcommands: `check-mps`, `train`, `one-weight`, `campaign`, `summarize` | yes |
+| `src/bitflip.py` | `flip`, `restore`, `fingerprint`, `field`. Reused for the DDPM next week. **Written.** | yes |
+| `tests/test_bitflip.py` | Hand tests on CPU and MPS (also step 0). **Written.** | yes |
+| `src/mnist_fault.py` | Subcommands: `train`, `one-weight`, `campaign`, `summarize` | yes |
 | `configs/mnist.json` | All settings from section 4 | yes |
-| `requirements-mac.txt` | `pip freeze` of the Mac venv | yes |
-| `data/` | MNIST download (torchvision) | **no. Add `data/` to `.gitignore`**: the current `.gitignore` doesn't cover it |
-| `logs/mnist/<run_name>/` | One folder per run (contents per step below) | CSVs, `run.json` and the plot yes; `*.pt`, `*.npy` no (already ignored) |
+| `requirements-mac.txt` | `pip freeze` of the Mac venv. **Written.** | yes |
+| `data/` | MNIST download (torchvision) | no: the root `../.gitignore` has `data/`, which matches at any depth |
+| `logs/<run_name>/` | One folder per run (contents per step below) | CSVs, `run.json` and the plot yes; `*.pt`, `*.npy` no (already ignored) |
 
 **Proposed `configs/mnist.json`:**
 
@@ -152,17 +154,16 @@ Simplify if it can be smaller.
 }
 ```
 
-**Proposed commands** (finalize once implemented; Tony runs them):
+**Proposed commands** (from `mnist/` with the venv active; finalize once implemented):
 
 ```bash
-pytest tests/
-python src/mnist_fault.py check-mps
+pytest tests/ -v -rs                                       # step 0 and step 3 hand tests
 python src/mnist_fault.py train --run-name train_a
 python src/mnist_fault.py train --run-name train_b        # must hash identically to train_a
-python src/mnist_fault.py one-weight --model logs/mnist/train_a/model_fp32.pt --run-name one_weight
-python src/mnist_fault.py campaign --model logs/mnist/train_a/model_fp32.pt --run-name campaign_a
-python src/mnist_fault.py campaign --model logs/mnist/train_a/model_fp32.pt --run-name campaign_b
-python src/mnist_fault.py summarize logs/mnist/campaign_a
+python src/mnist_fault.py one-weight --model logs/train_a/model_fp32.pt --run-name one_weight
+python src/mnist_fault.py campaign --model logs/train_a/model_fp32.pt --run-name campaign_a
+python src/mnist_fault.py campaign --model logs/train_a/model_fp32.pt --run-name campaign_b
+python src/mnist_fault.py summarize logs/campaign_a
 ```
 
 ## 8. Steps
@@ -170,14 +171,15 @@ python src/mnist_fault.py summarize logs/mnist/campaign_a
 Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 = summary, 7 = paragraph). The doc's own list numbering renders oddly; ignore it.
 
 ### Setup: Mac environment
-**Status:** not started.
+**Status:** done (Nov 8). The check printed `arm64 2.15.0 True`.
 - Run the setup commands in section 6. Write `requirements-mac.txt`. Add `data/` to `.gitignore`.
 - **Done when:** the check prints `arm64 ... True`, and `requirements-mac.txt` exists.
 
 ### Step 0: MPS capability check
-**Status:** not started.
+**Status:** passed (Nov 8): 47 passed, 0 skipped, including all 23 MPS cases.
+- **How to run:** `pytest tests/ -v -rs` from `mnist/`. The tests cover all three checks below, so there is no separate `check-mps` subcommand. The MPS cases must show PASSED, not SKIPPED (they skip only when MPS is unavailable, e.g. on the PC).
 - Confirm on MPS:
-  1. An FP16 matmul runs: `(torch.randn(64, 784, device="mps").half() @ torch.randn(784, 128, device="mps").half())` gives an FP16 result on `mps`.
+  1. An FP16 matmul runs and gives an FP16 result on `mps`, close to the FP32 result (64×784 @ 784×128; the test uses fixed `linspace` data so no seed is needed).
   2. `w.view(torch.int16)` shares storage with the FP16 tensor `w`, both on MPS: writing a value through the int16 view changes `w` (compare before/after on CPU copies; also check `data_ptr()` is equal).
   3. The step 3 hand tests pass on MPS.
 - **Stop if** any of these fail: tell Tony. The doc's fallback is CPU FP32 with 32 bits per element (9,600 faults, must be reported). CPU FP16 would keep 4,800 faults and the diffusion study's bit layout, but it needs Parnian's OK. Never switch quietly.
@@ -193,7 +195,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Save** `model_fp32.pt` (state dict; git-ignored). Record (a) the SHA-256 of the file and (b) a parameter hash: SHA-256 over the raw bytes of each tensor in `state_dict()` order. Use (b) for comparisons; it doesn't depend on file metadata.
 - **Verify:** train twice (`train_a`, `train_b`) and confirm the parameter hashes are identical.
 - **Stop if** the hashes differ: record it in `run.json` and the work log, and ask Tony.
-- **Outputs:** `logs/mnist/train_a/{model_fp32.pt, run.json}`, same for `train_b`.
+- **Outputs:** `logs/train_a/{model_fp32.pt, run.json}`, same for `train_b`.
 
 ### Step 2: Switch the stored network to FP16 on MPS
 **Status:** not started.
@@ -205,7 +207,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** the margin fails or the logits differ: record and ask Tony.
 
 ### Step 3: Build the single-bit flip (`src/bitflip.py`)
-**Status:** not started.
+**Status:** in progress. `flip`, `restore`, `fingerprint`, `field` and the hand tests are written and pass on CPU and MPS (Nov 8). The sanity check on the trained network waits for step 2.
 - **Address:** (tensor name, flat index in storage order, from 0). `nn.Linear` stores weights as (out, in):
   - `fc1.weight`: 128 × 784 = 100,352 elements; flat index `i` is hidden unit `i // 784`, pixel `i % 784`.
   - `fc2.weight`: 10 × 128 = 1,280 elements; flat index `i` is output class `i // 128`, hidden unit `i % 128`.
@@ -231,7 +233,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 **Status:** not started.
 - With the role 1 generator, draw `rng.integers(0, 100352)` until the **FP16** value of that `fc1.weight` element has magnitude below 1. Record the chosen index and how many draws it took.
 - For bits 0 to 15: fingerprint → flip → evaluate on all 10,000 test images → classify against the reference → restore → verify the fingerprint.
-- **Output:** `logs/mnist/one_weight/one_weight.csv`, 16 rows, columns `bit, field, original_value, new_value, class, accuracy`, plus `run.json`. Use the same number formatting as step 5.
+- **Output:** `logs/one_weight/one_weight.csv`, 16 rows, columns `bit, field, original_value, new_value, class, accuracy`, plus `run.json`. Use the same number formatting as step 5.
 - **Stop if** any fingerprint check fails.
 
 ### Step 5: Run the campaign (4,800 faults)
@@ -252,8 +254,8 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **`faults.csv`:** one row per fault, exactly these columns in this order: `tensor, element_index, bit, original_value, new_value, class, accuracy`. `new_value` is the FP16 value read back from the tensor after the flip.
 - **Stable formatting:** values as `repr(float(v))` (gives `inf`, `-inf`, `nan` for non-finite); accuracy as `f"{correct / 10000:.4f}"`; class as `masked` / `sdc` / `non_finite`. Write with `newline=""` so line endings are the same in every run.
 - **No run-specific data in the CSVs.** Timestamps, wall time and paths go in `run.json`, or the identical-file check fails for the wrong reason.
-- **`run.json`:** command; git commit and dirty flag (same convention as `src/baseline.py`: `git status --porcelain --untracked-files=no`); master seed, role table and every derived seed; device; macOS version; chip (`sysctl -n machdep.cpu.brand_string`); Python, torch, torchvision and numpy versions; torch thread count; MNIST file hashes; model file and parameter hashes; reference prediction and logit hashes; `fp32_cpu_accuracy`, `fp32_mps_accuracy`, `fp16_mps_accuracy`; wall time.
-- **Determinism (hand-in item):** run twice into `campaign_a` and `campaign_b`. `chosen_elements.csv` and `faults.csv` must be byte-identical: compare SHA-256 and save the comparison as `logs/mnist/campaign_compare.json`.
+- **`run.json`:** command; git commit and dirty flag (same convention as `../cifar10/src/baseline.py`: `git status --porcelain --untracked-files=no`); master seed, role table and every derived seed; device; macOS version; chip (`sysctl -n machdep.cpu.brand_string`); Python, torch, torchvision and numpy versions; torch thread count; MNIST file hashes; model file and parameter hashes; reference prediction and logit hashes; `fp32_cpu_accuracy`, `fp32_mps_accuracy`, `fp16_mps_accuracy`; wall time.
+- **Determinism (hand-in item):** run twice into `campaign_a` and `campaign_b`. `chosen_elements.csv` and `faults.csv` must be byte-identical: compare SHA-256 and save the comparison as `logs/campaign_compare.json`.
 - **Expected cost:** 4,800 forward passes of 10,000 images through ~0.1M parameters (~2 GFLOP each). Should take minutes on MPS; measure and record.
 - **Stop if** any check fails, or the two runs' CSVs differ (record it and ask Tony).
 
@@ -277,8 +279,8 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 
 ### Step 8: Document
 **Status:** not started.
-- Add a section for this week to `README.md`: master seed; machine (MacBook M5 Pro, macOS version, MPS); library versions (`requirements-mac.txt`, reinstall with `pip install -r requirements-mac.txt`); the exact commands that reproduce every table; where the result files are; the statement that two same-seed runs gave identical files (with the hashes); the interpretations in section 5; and that this is a separate result set from the PC.
-- Update the README's status line and "no injector code exists yet" note.
+- Add a section for this week to `README.md` in this folder (the root `../README.md` already points to it): master seed; machine (MacBook M5 Pro, macOS version, MPS); library versions (`requirements-mac.txt`, reinstall with `pip install -r requirements-mac.txt`); the exact commands that reproduce every table; where the result files are; the statement that two same-seed runs gave identical files (with the hashes); the interpretations in section 5; and that this is a separate result set from the PC.
+- The root `../README.md` status line says no injector code exists yet. It describes the CIFAR-10 project, so change it only if that stops being true there.
 
 ## 9. Hand-in checklist (doc)
 
@@ -297,6 +299,7 @@ Also on the doc's list for Tony this week: reading on fault vs error vs failure,
 
 ## 10. Open items (Tony)
 
+- [ ] **Tasks changed (Tony, Nov 8):** most of this week's code should be for the CIFAR-10 DDPM, not this MNIST network, which is why the repo was split. The Google Doc doesn't show the change yet (same revision as Nov 7, checked Nov 8 at 15:00 PST). Open: whether MNIST steps 1–8 still go ahead, and whether they're still due Nov 9. Ask Tony before starting step 1.
 - [ ] Confirm input preprocessing (mean/std) with Aneesh and Parnian. Blocks step 1 only.
 - [ ] Ask Parnian whether the 0.1 pp FP16 margin is acceptable. Needed at step 2.
 - [ ] Add Aneesh and Parnian as GitHub collaborators (a doc task item).
@@ -313,7 +316,8 @@ Also on the doc's list for Tony this week: reading on fault vs error vs failure,
 
 - Bit-15 mask must be −32768 in int16 (step 3).
 - `python3` is 3.14 on this Mac; use `python3.12`.
-- `data/` isn't git-ignored yet; add it before downloading MNIST.
+- `data/` is git-ignored by the root `../.gitignore` (added Nov 8), so the MNIST download stays out of git.
+- **Two sessions in one folder break each other.** On Nov 8 another session moved files (the `cifar10/` + `mnist/` split) while this one was writing code, and an untracked file was carried into the wrong folder. Before moving files, check `git status` and whether another session is working in this checkout.
 - `*.png` is git-ignored; the plot needs `git add -f`.
 - MPS ops are asynchronous; `.item()` and `.cpu()` synchronize. Read results only through those.
 - `p.data.view(-1)` requires a contiguous tensor; `nn.Linear` weights are contiguous, but assert it.
@@ -321,7 +325,7 @@ Also on the doc's list for Tony this week: reading on fault vs error vs failure,
 
 ## 13. Next week (context only)
 
-Nov 9 – 16 runs on the Windows RTX 5090 PC: the DDPM (`google/ddpm-cifar10-32`) fault injector, dtype audit, and a first demo of bit 14 and bit 0 flips in 4 UNet regions. The DDPM `flip_bit` reuses `src/bitflip.py`; the FP16 bit layout is the same on NVIDIA.
+Nov 9 – 16 runs on the Windows RTX 5090 PC: the DDPM (`google/ddpm-cifar10-32`) fault injector, dtype audit, and a first demo of bit 14 and bit 0 flips in 4 UNet regions. The DDPM `flip_bit` reuses this folder's `src/bitflip.py` (whether `../cifar10/` imports it or gets a copy isn't decided); the FP16 bit layout is the same on NVIDIA.
 
 ## 14. Work log
 
@@ -334,5 +338,9 @@ Append one row per step or significant action. Newest last.
 | 2026-11-07 | Claude (Mac) | Read the Google Doc Proposal tab; compared with the handoff | No conflicts. Doc leaves the 7 decisions open. Training is one purpose (one stream). Kaggle MNIST link confirmed. No comments or suggested edits returned. | `2484ce4` |
 | 2026-11-08 | Tony + Claude | Settled the 7 decisions (section 4) | Seed 20261104; SeedSequence roles; mean/std; Adam 10 epochs; 0.1 pp; CPU training; PNG. | `2484ce4` |
 | 2026-11-08 | Tony + Claude | Discussed CPU FP16 and FP32-on-GPU | Keep FP16 on MPS. Add FP32-on-MPS accuracy for the margin check (section 5, item 3). | `2484ce4` |
-| 2026-11-08 | Claude (Mac) | Wrote this plan and `README-mnist-week1.md` | Committed with the pointer files (next row). | see next row |
-| 2026-11-08 | Claude (Mac) | Added one-line pointers to this file in `AGENTS.md` and `CLAUDE.md`; committed and pushed all four files at Tony's request | `AGENTS.md` is read by most AI coding tools, `CLAUDE.md` by Claude Code. This Mac has no git identity configured, so the commit used Tony's identity from earlier commits via `git -c` (no config changed). | the commit that added this row |
+| 2026-11-08 | Claude (Mac) | Wrote this plan and `README-mnist-week1.md` (now `README.md` here) | Committed with the pointer files (next row). | `72e467b` |
+| 2026-11-08 | Claude (Mac) | Added one-line pointers to this file in `AGENTS.md` and `CLAUDE.md`; committed and pushed all four files at Tony's request | `AGENTS.md` is read by most AI coding tools, `CLAUDE.md` by Claude Code. This Mac has no git identity configured, so the commit used Tony's identity from earlier commits via `git -c` (no config changed). | `72e467b` |
+| 2026-11-08 | Claude (Mac) | Setup: created `.venv/` at the repo root with `python3.12`; installed torch, torchvision, numpy, matplotlib, pytest; wrote `requirements-mac.txt`; added `data/` and `.pytest_cache/` to the root `.gitignore` | Check printed `arm64 2.15.0 True`. torch 2.15.0 is the same version as the PC's `2.15.0+cu134`. | uncommitted, on `72e467b` |
+| 2026-11-08 | Claude (Mac) | Step 0: wrote `src/bitflip.py` and `tests/test_bitflip.py`; ran `pytest tests/ -v -rs` | 47 passed, 0 skipped (23 on MPS). FP16 matmul runs on MPS; the int16 view has the same `data_ptr` as the weight; a flip changes the live weight and the layer's output; all four hand tests pass; flip + restore keeps the fingerprint for all 16 bits. A deliberately broken `flip` that writes to a copy left the weight at 0.5, so the tests would catch that bug. | uncommitted, on `72e467b` |
+| 2026-11-08 | Fork session (for Tony) | Split the repo into `cifar10/` and `mnist/` after Tony said this week's tasks changed (CIFAR-10 DDPM is the main code). The first attempt carried this session's untracked `src/bitflip.py` into `cifar10/` and was undone; redone after this session sent its file list. | This file and the handoff moved to `mnist/`; `README-mnist-week1.md` became `mnist/README.md`; root `README.md`, `AGENTS.md` and `CLAUDE.md` updated. File hashes unchanged; tests still 47 passed from `mnist/tests`. | uncommitted, on `72e467b` |
+| 2026-11-08 | Claude (Mac) | Updated this file for the split: paths relative to `mnist/`, logs under `logs/<run>/`, step statuses, `check-mps` dropped in favour of the pytest run, open question about the task change | Step 1 waits for Tony's answer on whether MNIST continues. | uncommitted, on `72e467b` |

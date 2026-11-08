@@ -1,1 +1,1 @@
-Working on the MNIST bit-flip study? Read [`plan-mnist-week1.md`](plan-mnist-week1.md) first: it has the rules, settled decisions, step-by-step plan and work log. Add a work-log row after every step.
+This repo holds two separate projects; keep their code apart. `cifar10/` is the DDPM on CIFAR-10 diffusion work (runs on the Windows RTX 5090 PC). `mnist/` is the small MNIST bit-flip study (runs on the MacBook): before working on it, read [`mnist/plan-mnist-week1.md`](mnist/plan-mnist-week1.md) and add a work-log row after every step.

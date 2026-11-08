@@ -18,11 +18,17 @@ Tier S model: [`google/ddpm-cifar10-32`](https://huggingface.co/google/ddpm-cifa
 
 ## Layout
 
+The repo holds two separate projects. Keep their code apart.
+
 ```
-src/        baseline.py (clean generation + run record), compare_runs.py (bitwise check)
-configs/    (empty until the standardized fault procedure lands)
-logs/       one folder per run: run.json (committed) + images/, grid.png, samples.npy (git-ignored)
-notebooks/
+cifar10/        Tier S: DDPM on CIFAR-10 (results machine: Windows RTX 5090 PC)
+  src/          baseline.py (clean generation + run record), compare_runs.py (bitwise check)
+  configs/      (empty until the standardized fault procedure lands)
+  logs/         one folder per run: run.json (committed) + images/, grid.png, samples.npy (git-ignored)
+  notebooks/
+  requirements.txt   pinned PC stack
+mnist/          small MNIST network bit-flip study (results machine: MacBook M5 Pro)
+                see mnist/README.md
 ```
 
 ## Setup (results machine: RTX 5090)
@@ -38,14 +44,14 @@ All results must come from one GPU, one OS environment and one pinned software s
    If the driver is too old for CUDA 13.4, update the driver or use the `cu128` index (torch 2.11.0).
 4. `pip install diffusers transformers accelerate safetensors pillow numpy`
 5. Smoke test: `python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"` should print `True` and `NVIDIA GeForce RTX 5090`.
-6. Pin the stack: `pip freeze > requirements.txt`
+6. Pin the stack: `pip freeze > cifar10/requirements.txt`
 
-To recreate the pinned stack later (new venv or another clone), install from `requirements.txt`. The extra index is needed because the `+cu134` torch build is not on PyPI:
-`pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu134`
+To recreate the pinned stack later (new venv or another clone), install from `cifar10/requirements.txt`. The extra index is needed because the `+cu134` torch build is not on PyPI:
+`pip install -r cifar10/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu134`
 
 ## Clean baseline + determinism check
 
-Run from the repo root. Each run is its own process; seed and step count are pilot placeholders, not protocol decisions.
+Run from the `cifar10/` folder (`cd cifar10`). Each run is its own process; seed and step count are pilot placeholders, not protocol decisions.
 
 ```
 python src/baseline.py --seed 0 --steps 50 --run-name seed0_a

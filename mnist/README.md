@@ -2,7 +2,7 @@
 
 A short guide for people. The full step-by-step plan, written for AI agents, is in [`plan-mnist-week1.md`](plan-mnist-week1.md).
 
-**Status (Nov 8):** planned, decisions made, no code yet. **Due:** Monday, Nov 9.
+**Status (Nov 8):** decisions made, Mac setup done, bit-flip code started. The plan's work log has the details. **Due:** Monday, Nov 9.
 
 ## What we're doing
 
@@ -63,7 +63,7 @@ All of this week's results come from Tony's MacBook (Apple M5 Pro, macOS 26.6.2)
 
 ## How to run it
 
-*Coming once the code exists.* The commands will go here and in the main [`README.md`](README.md).
+*Coming once the code exists.* The commands will go here and in the main [`README.md`](../README.md).
 
 ## Who does what
 
