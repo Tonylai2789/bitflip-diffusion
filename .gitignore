@@ -3,6 +3,10 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+.pytest_cache/
+
+# Datasets (MNIST downloads here; SHA-256 of the raw files goes in run.json)
+data/
 
 # Model weights
 *.safetensors
