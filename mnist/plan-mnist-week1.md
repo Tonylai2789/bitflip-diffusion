@@ -6,7 +6,7 @@
 **Repo:** `Tonylai2789/bitflip-diffusion`. This plan was written at commit `2484ce4`.
 **Owner:** Tony Lai. Team: Aneesh. Mentor: Parnian Shabani Kamran. PI: Prof. Hussain Al-Asaad (UC Davis).
 **Due:** Monday, Nov 9, 2026.
-**Status (Nov 8):** Steps 0–6 are implemented, and development runs passed every check. They were also verified independently (work log). **Next:** commit the code (Tony's approval), then redo the official runs on the clean tree; then steps 7 (Tony) and 8. See the [work log](#14-work-log) for details.
+**Status (Nov 8):** Steps 0–6 and 8 are done. The official runs at commit `757c67a` passed every check and were verified independently; results are in [`README.md`](README.md) and `logs/`. **Left:** step 7 (the fault-model paragraph) and the four short answers, which Tony writes; then an agent fact-checks the paragraph. See the [work log](#14-work-log) for details.
 
 ---
 
@@ -190,7 +190,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** any of these fail: tell Tony. The doc's fallback is CPU FP32 with 32 bits per element (9,600 faults, must be reported). CPU FP16 would keep 4,800 faults and the diffusion study's bit layout, but it needs Parnian's OK. Never switch quietly.
 
 ### Step 1: Train (CPU, FP32)
-**Status:** development run passed (Nov 8); official run pending (after the code is committed).
+**Status:** done. The official run passed at `757c67a` with a clean tree (Nov 8).
 - **Data.** `torchvision.datasets.MNIST(root="data", train=..., download=True)`. Preload `.data` (uint8, N×28×28) and `.targets` once; convert to `float32`, divide by 255, normalize with 0.1307 / 0.3081, reshape to N×784. Record the SHA-256 of the four **uncompressed** raw files in `data/MNIST/raw/` (`train-images-idx3-ubyte`, `train-labels-idx1-ubyte`, `t10k-images-idx3-ubyte`, `t10k-labels-idx1-ubyte`). The uncompressed files are what torchvision and the doc's Kaggle copy (https://www.kaggle.com/datasets/hojjatk/mnist-dataset) have in common.
 - **Model.** `nn.Sequential`-style or a small module with `fc1 = nn.Linear(784, 128)`, ReLU, `fc2 = nn.Linear(128, 10)`. Parameter names must be `fc1.weight`, `fc1.bias`, `fc2.weight`, `fc2.bias`.
 - **Assert** total parameters = 101,770 and bias parameters = 138.
@@ -203,7 +203,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Outputs:** `logs/train_a/{model_fp32.pt, run.json}`, same for `train_b`.
 
 ### Step 2: Switch the stored network to FP16 on MPS
-**Status:** development run passed (Nov 8); official run pending (after the code is committed).
+**Status:** done. The official run passed at `757c67a` with a clean tree (Nov 8).
 - Load `model_fp32.pt`. Make an FP32 copy on MPS and an FP16 copy on MPS (`.half().to("mps")`).
 - Preload the 10,000 test images once as a `(10000, 784)` tensor on MPS, FP32 for the FP32 model and FP16 for the FP16 model. Each evaluation is one forward pass under `torch.no_grad()`.
 - Record `fp32_mps_accuracy` and `fp16_mps_accuracy`. **Check** \|fp16 − fp32_mps\| ≤ 0.1 pp.
@@ -212,7 +212,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** the margin fails or the logits differ: record and ask Tony.
 
 ### Step 3: Build the single-bit flip (`src/bitflip.py`)
-**Status:** hand tests pass on CPU and MPS; the sanity check on the trained network passed in the development runs (Nov 8). Official run pending.
+**Status:** done. The hand tests pass on CPU and MPS, and the sanity check on the trained network passed in the official runs at `757c67a` (Nov 8).
 - **Address:** (tensor name, flat index in storage order, from 0). `nn.Linear` stores weights as (out, in):
   - `fc1.weight`: 128 × 784 = 100,352 elements; flat index `i` is hidden unit `i // 784`, pixel `i % 784`.
   - `fc2.weight`: 10 × 128 = 1,280 elements; flat index `i` is output class `i // 128`, hidden unit `i % 128`.
@@ -235,14 +235,14 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** a hand test or the sanity check fails.
 
 ### Step 4: Walk one weight through all 16 bits
-**Status:** development run passed (Nov 8); official run pending (after the code is committed).
+**Status:** done. The official run passed at `757c67a` with a clean tree (Nov 8).
 - With the role 1 generator, draw `rng.integers(0, 100352)` until the **FP16** value of that `fc1.weight` element has magnitude below 1. Record the chosen index and how many draws it took.
 - For bits 0 to 15: fingerprint → flip → evaluate on all 10,000 test images → classify against the reference → restore → verify the fingerprint.
 - **Output:** `logs/one_weight/one_weight.csv`, 16 rows, columns `bit, field, original_value, new_value, class, accuracy`, plus `run.json`. Use the same number formatting as step 5.
 - **Stop if** any fingerprint check fails.
 
 ### Step 5: Run the campaign (4,800 faults)
-**Status:** development run passed (Nov 8); official run pending (after the code is committed).
+**Status:** done. The official run passed at `757c67a` with a clean tree (Nov 8).
 - **Choose the elements first.** `rng2.choice(100352, 150, replace=False)` for `fc1.weight` (role 2) and `rng3.choice(1280, 150, replace=False)` for `fc2.weight` (role 3). Keep draw order (don't sort). Write `chosen_elements.csv` with columns `tensor, element_index, original_value` (fc1 rows first, then fc2) **before any flipping**.
 - **Loop:** for each of the 300 elements (CSV order), for bit 0..15:
 
@@ -265,7 +265,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** any check fails, or the two runs' CSVs differ (record it and ask Tony).
 
 ### Step 6: Summarize
-**Status:** development run passed (Nov 8); official run pending (after the code is committed).
+**Status:** done. The official run passed at `757c67a` with a clean tree (Nov 8).
 - Read only `faults.csv` (so the summary is reproducible from the committed file).
 - Per bit (n = 300): count and share of each class, each with a 95% Wilson interval, z = 1.96:
   - centre = (p + z²/2n) / (1 + z²/n)
@@ -283,7 +283,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Agent's job:** check every fact against `configs/mnist.json`, `run.json` and this file (seed, role method, counts, device, preprocessing, interpretations in section 5). Report mismatches; don't rewrite the paragraph.
 
 ### Step 8: Document
-**Status:** not started.
+**Status:** done (Nov 8): the "Results (official run)" section in `README.md`. Revisit if the step 7 paragraph changes any stated fact.
 - Add a section for this week to `README.md` in this folder (the root `../README.md` already points to it): master seed; machine (MacBook M5 Pro, macOS version, MPS); library versions (`requirements-mac.txt`, reinstall with `pip install -r requirements-mac.txt`); the exact commands that reproduce every table; where the result files are; the statement that two same-seed runs gave identical files (with the hashes); the interpretations in section 5; and that this is a separate result set from the PC.
 - The root `../README.md` status line says no injector code exists yet. It describes the CIFAR-10 project, so change it only if that stops being true there.
 
@@ -291,12 +291,12 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 
 | Item | From | Status |
 |---|---|---|
-| Repo link; README with master seed, library versions and the reproduce command | Step 8 | not started |
-| File of the 300 chosen elements | `chosen_elements.csv` (step 5) | dev run done; official pending |
-| One-row-per-fault result file | `faults.csv` (step 5) | dev run done; official pending |
-| Statement that two same-seed runs gave identical result files | Step 5 check | dev runs identical; official pending |
-| One-weight table | Step 4 | dev run done; official pending |
-| Per-bit table and plot | Step 6 | dev run done; official pending |
+| Repo link; README with master seed, library versions and the reproduce command | Step 8 | done (`mnist/README.md`) |
+| File of the 300 chosen elements | `chosen_elements.csv` (step 5) | done (`logs/campaign_a/`) |
+| One-row-per-fault result file | `faults.csv` (step 5) | done (`logs/campaign_a/`) |
+| Statement that two same-seed runs gave identical result files | Step 5 check | done (README, `logs/campaign_compare.json`) |
+| One-weight table | Step 4 | done (`logs/one_weight/one_weight.csv`) |
+| Per-bit table and plot | Step 6 | done (`per_bit.csv`, `per_field.csv`, `per_bit.png`; table in README) |
 | Fault-model paragraph | Step 7 (Tony) | not started |
 | Short answers: (1) which bits cause SDC and which cause non-finite outputs, explained from FP16 storage; (2) which bits never changed a prediction, and why; (3) how FP32 storage would change the results; (4) what in the fault model would need changing for a diffusion model | Tony, from the data | not started |
 
@@ -359,3 +359,8 @@ Append one row per step or significant action. Newest last.
 | 2026-11-08 | dev run | Step 6: summarize campaign_a | `per_bit.csv`, `per_field.csv`, `per_bit.png` written. Field totals (masked / sdc / non_finite): sign 125 / 175 / 0, exponent 587 / 814 / 99, mantissa 2725 / 275 / 0. | uncommitted, on `f1f6bb5` |
 | 2026-11-08 | Claude (Mac) | Reviewed `mnist_fault.py` against this plan; independent check script (not using `mnist_fault.py` or `bitflip.py`) | Code matches sections 2, 4, 5 and 8. Independent checks all passed: the 300 elements re-derive from roles 2 and 3 in draw order; every `original_value` matches the FP16 weight; all 4,800 `new_value`s equal a numpy XOR flip; row order and columns are exact; per-bit counts and Wilson bounds match an independent computation; my own forward pass reproduces `fp16_mps_accuracy`; 5 faults re-run from scratch (masked, sdc, non_finite across fc1 and fc2) give the same class and accuracy as the CSV. | uncommitted, on `f1f6bb5` |
 | 2026-11-08 | Claude (Mac) | Switched all CSV writers to LF line endings | Development CSVs used the csv default CRLF. LF diffs cleanly and avoids line-ending conversion on the Windows PC. pytest 48 passed. The official runs will produce LF files, so their CSV hashes will differ from the dev hashes above. | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | Claude (Mac) | Committed and pushed the code and docs at Tony's request ("Yes, do all of it") | `configs/mnist.json`, `src/mnist_fault.py`, `tests/test_wilson.py`, plan and README updates. pytest 48 passed before the commit. | `757c67a` |
+| 2026-11-08 | official run | Deleted the development runs (never committed); ran the section 7 commands on a clean tree | Every `run.json` records commit `757c67a`, `git_dirty: false`. pytest 48 passed. Same results as the dev runs: parameter hash `4ee3056c…db923` in both training runs (match), accuracies 0.9743 / 0.9743 / 0.9743 (FP32 CPU / FP32 MPS / FP16 MPS, 0.0 pp), double evaluation identical, sanity check passed (`fc1.weight[89696]`, 5,165 predictions changed, restore exact), one weight `fc1.weight[33719]` (only bit 14 not masked), totals 3,437 masked / 1,264 sdc / 99 non_finite. Campaign loop 10.8 s; training 3.8 s. | `757c67a` |
+| 2026-11-08 | official run | Determinism check (`compare`) | Both pairs identical. `chosen_elements.csv` `80e9c4669122e5da5a9a056083b20bce5988c57ca7a5282c87907bb095ba50ce`, `faults.csv` `dae4fa9f643e6b19930a0fade5436df38005e17d2cbbea61d2d22de5ee52ab2e` (LF line endings), in both campaign_a and campaign_b. | `757c67a` |
+| 2026-11-08 | Claude (Mac) | Re-ran the independent check script on the official runs | All checks passed, same as the dev run (re-derived elements, XOR values, row order, counts, Wilson bounds, own forward pass, 5 faults re-run from scratch). Line endings LF. | `757c67a` |
+| 2026-11-08 | Claude (Mac) | Step 8: wrote the "Results (official run)" section in `README.md` (table generated from `per_bit.csv`); updated statuses here; committed the results (CSVs, `run.json`s, compare files, `per_bit.png` force-added) | Model weights and `reference_predictions.npy` stay git-ignored; their hashes are in `run.json`. | the commit that added this row |

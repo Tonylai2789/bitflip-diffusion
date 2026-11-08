@@ -1,0 +1,15 @@
+{
+  "run_a": "logs/campaign_a",
+  "run_b": "logs/campaign_b",
+  "sha256": {
+    "chosen_elements.csv": [
+      "80e9c4669122e5da5a9a056083b20bce5988c57ca7a5282c87907bb095ba50ce",
+      "80e9c4669122e5da5a9a056083b20bce5988c57ca7a5282c87907bb095ba50ce"
+    ],
+    "faults.csv": [
+      "dae4fa9f643e6b19930a0fade5436df38005e17d2cbbea61d2d22de5ee52ab2e",
+      "dae4fa9f643e6b19930a0fade5436df38005e17d2cbbea61d2d22de5ee52ab2e"
+    ]
+  },
+  "identical": true
+}

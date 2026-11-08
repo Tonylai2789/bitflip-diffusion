@@ -1,0 +1,15 @@
+{
+  "run_a": "logs/train_a",
+  "run_b": "logs/train_b",
+  "sha256": {
+    "model_param_sha256": [
+      "4ee3056c93ccf1a2a56df7879c3f79464253091babe1bf913ff287c5531db923",
+      "4ee3056c93ccf1a2a56df7879c3f79464253091babe1bf913ff287c5531db923"
+    ],
+    "model_file_sha256": [
+      "da063e2cc2471a46e1f3e7968675fc4433df0153c0f801b83b5f44af0d07d71d",
+      "da063e2cc2471a46e1f3e7968675fc4433df0153c0f801b83b5f44af0d07d71d"
+    ]
+  },
+  "identical": true
+}
