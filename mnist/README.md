@@ -2,7 +2,7 @@
 
 A short guide for people. The full step-by-step plan, written for AI agents, is in [`plan-mnist-week1.md`](plan-mnist-week1.md).
 
-**Status (Nov 8):** decisions made, Mac setup done, bit-flip code started. The plan's work log has the details. **Due:** Monday, Nov 9.
+**Status (Nov 8):** all code written and checked with practice runs, and every check passed. The official runs come next, once the code is committed. The plan's work log has the details. **Due:** Monday, Nov 9.
 
 ## What we're doing
 
@@ -63,7 +63,30 @@ All of this week's results come from Tony's MacBook (Apple M5 Pro, macOS 26.6.2)
 
 ## How to run it
 
-*Coming once the code exists.* The commands will go here and in the main [`README.md`](../README.md).
+On a Mac with Apple silicon. From the repo root, once:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r mnist/requirements-mac.txt
+cd mnist
+```
+
+Then, from `mnist/`:
+
+```bash
+pytest tests/ -q                                                    # bit-flip and statistics tests
+python src/mnist_fault.py train --run-name train_a                  # train the network
+python src/mnist_fault.py train --run-name train_b                  # train again...
+python src/mnist_fault.py compare logs/train_a logs/train_b         # ...and check both came out identical
+python src/mnist_fault.py one-weight --model logs/train_a/model_fp32.pt --run-name one_weight
+python src/mnist_fault.py campaign --model logs/train_a/model_fp32.pt --run-name campaign_a
+python src/mnist_fault.py campaign --model logs/train_a/model_fp32.pt --run-name campaign_b
+python src/mnist_fault.py compare logs/campaign_a logs/campaign_b   # the two campaigns must match
+python src/mnist_fault.py summarize logs/campaign_a                 # per-bit tables and plot
+```
+
+Everything takes under a minute on the M5 Pro. Results land in `logs/`: `one_weight/one_weight.csv`, and in `campaign_a/` the files `chosen_elements.csv`, `faults.csv`, `per_bit.csv`, `per_field.csv` and `per_bit.png`.
 
 ## Who does what
 

@@ -6,7 +6,7 @@
 **Repo:** `Tonylai2789/bitflip-diffusion`. This plan was written at commit `2484ce4`.
 **Owner:** Tony Lai. Team: Aneesh. Mentor: Parnian Shabani Kamran. PI: Prof. Hussain Al-Asaad (UC Davis).
 **Due:** Monday, Nov 9, 2026.
-**Status (Nov 8):** Setup done and step 0 passed. `src/bitflip.py` and its hand tests are written. Training (step 1) not started. **Open:** whether the MNIST steps still go ahead after Tony's Nov 8 task change (section 10). See the [work log](#14-work-log) for details.
+**Status (Nov 8):** Steps 0–6 are implemented, and development runs passed every check. They were also verified independently (work log). **Next:** commit the code (Tony's approval), then redo the official runs on the clean tree; then steps 7 (Tony) and 8. See the [work log](#14-work-log) for details.
 
 ---
 
@@ -57,7 +57,7 @@
 
 - Since Nov 8 the repo holds two projects. `../cifar10/` is the DDPM work run on the PC: `src/baseline.py` and `src/compare_runs.py` (clean baseline), `logs/seed0_a` and `logs/seed0_b` (bitwise identical), empty `configs/` and `notebooks/`. `mnist/` is this study. The root keeps `README.md` (diffusion project and research questions), `.gitignore`, `AGENTS.md`, `CLAUDE.md` and the shared `.venv/`.
 - `../cifar10/requirements.txt` is pinned for the Windows PC (`torch==2.15.0+cu134`) and will not install on a Mac. **Leave it alone.** The Mac stack is `requirements-mac.txt` in this folder.
-- MNIST code so far: `src/bitflip.py` and `tests/test_bitflip.py` (setup and step 0 done). Steps 1–8 not started.
+- MNIST code: `src/bitflip.py`, `src/mnist_fault.py`, `configs/mnist.json`, `tests/test_bitflip.py`, `tests/test_wilson.py`. Development runs of steps 1–6 passed; official runs, step 7 and step 8 are still to do.
 - The handoff was checked against the Google Doc on Nov 7: no conflicts. The doc leaves the seed, stream method, preprocessing, training recipe, FP16 margin, training device and plot format open; Tony settled them on Nov 8 (section 4).
 
 ## 4. Settled decisions (Tony, Nov 8, 2026)
@@ -97,6 +97,8 @@ These are not deviations, but state them in the README and the step 7 paragraph.
 5. **`requirements-mac.txt`** holds the Mac stack. The doc names `requirements.txt`; that file stays as the PC stack.
 6. **The evaluation device affects some classifications.** Whether a large exponent fault ends as `non_finite` or `sdc` can depend on how the backend accumulates the matrix product (FP16 or higher precision internally). Record the device and library versions; name the device in the step 7 paragraph.
 7. **The step 3 sanity-check weight is chosen without randomness** (the `fc1.weight` element with the largest FP16 magnitude below 1), so it needs no RNG role. The doc only asks for "one weight that the network uses".
+8. **`derived_seeds` in `run.json`** lists `int(SeedSequence(20261104, spawn_key=(role,)).generate_state(1)[0])` for every role. Torch (role 0) is seeded with that number. The numpy roles (1–3) seed `default_rng` with the `SeedSequence` itself, so for them the number identifies the stream but isn't what numpy receives.
+9. **CSV files use LF line endings** (`lineterminator="\n"`), so they diff cleanly and match byte for byte across machines.
 
 ## 6. Machine and environment
 
@@ -133,11 +135,12 @@ Simplify if it can be smaller.
 |---|---|---|
 | `src/bitflip.py` | `flip`, `restore`, `fingerprint`, `field`. Reused for the DDPM next week. **Written.** | yes |
 | `tests/test_bitflip.py` | Hand tests on CPU and MPS (also step 0). **Written.** | yes |
-| `src/mnist_fault.py` | Subcommands: `train`, `one-weight`, `campaign`, `summarize` | yes |
-| `configs/mnist.json` | All settings from section 4 | yes |
+| `tests/test_wilson.py` | Wilson check value k = 0, n = 300 → [0, 1.26%]. **Written.** | yes |
+| `src/mnist_fault.py` | Subcommands `train`, `one-weight`, `campaign`, `summarize`, and `compare` (writes `logs/train_compare.json` / `logs/campaign_compare.json`; exits 1 on a mismatch). `one-weight` and `campaign` both run the step 2 checks and the step 3 sanity check first. Every run refuses to overwrite an existing folder. **Written.** | yes |
+| `configs/mnist.json` | All settings from section 4. **Written.** | yes |
 | `requirements-mac.txt` | `pip freeze` of the Mac venv. **Written.** | yes |
 | `data/` | MNIST download (torchvision) | no: the root `../.gitignore` has `data/`, which matches at any depth |
-| `logs/<run_name>/` | One folder per run (contents per step below) | CSVs, `run.json` and the plot yes; `*.pt`, `*.npy` no (already ignored) |
+| `logs/<run_name>/` | One folder per run (contents per step below), plus `logs/*_compare.json` | CSVs, `run.json`, the compare files and the plot yes; `model_fp32.pt` and `reference_predictions.npy` no (already ignored) |
 
 **Proposed `configs/mnist.json`:**
 
@@ -154,15 +157,17 @@ Simplify if it can be smaller.
 }
 ```
 
-**Proposed commands** (from `mnist/` with the venv active; finalize once implemented):
+**Commands** (from `mnist/` with the venv active; the whole sequence takes under a minute):
 
 ```bash
-pytest tests/ -v -rs                                       # step 0 and step 3 hand tests
+pytest tests/ -v -rs                                       # step 0 and step 3 hand tests, Wilson check
 python src/mnist_fault.py train --run-name train_a
-python src/mnist_fault.py train --run-name train_b        # must hash identically to train_a
+python src/mnist_fault.py train --run-name train_b
+python src/mnist_fault.py compare logs/train_a logs/train_b          # parameter hashes must match
 python src/mnist_fault.py one-weight --model logs/train_a/model_fp32.pt --run-name one_weight
 python src/mnist_fault.py campaign --model logs/train_a/model_fp32.pt --run-name campaign_a
 python src/mnist_fault.py campaign --model logs/train_a/model_fp32.pt --run-name campaign_b
+python src/mnist_fault.py compare logs/campaign_a logs/campaign_b    # CSVs must be byte-identical
 python src/mnist_fault.py summarize logs/campaign_a
 ```
 
@@ -185,7 +190,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** any of these fail: tell Tony. The doc's fallback is CPU FP32 with 32 bits per element (9,600 faults, must be reported). CPU FP16 would keep 4,800 faults and the diffusion study's bit layout, but it needs Parnian's OK. Never switch quietly.
 
 ### Step 1: Train (CPU, FP32)
-**Status:** not started.
+**Status:** development run passed (Nov 8); official run pending (after the code is committed).
 - **Data.** `torchvision.datasets.MNIST(root="data", train=..., download=True)`. Preload `.data` (uint8, N×28×28) and `.targets` once; convert to `float32`, divide by 255, normalize with 0.1307 / 0.3081, reshape to N×784. Record the SHA-256 of the four **uncompressed** raw files in `data/MNIST/raw/` (`train-images-idx3-ubyte`, `train-labels-idx1-ubyte`, `t10k-images-idx3-ubyte`, `t10k-labels-idx1-ubyte`). The uncompressed files are what torchvision and the doc's Kaggle copy (https://www.kaggle.com/datasets/hojjatk/mnist-dataset) have in common.
 - **Model.** `nn.Sequential`-style or a small module with `fc1 = nn.Linear(784, 128)`, ReLU, `fc2 = nn.Linear(128, 10)`. Parameter names must be `fc1.weight`, `fc1.bias`, `fc2.weight`, `fc2.bias`.
 - **Assert** total parameters = 101,770 and bias parameters = 138.
@@ -198,7 +203,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Outputs:** `logs/train_a/{model_fp32.pt, run.json}`, same for `train_b`.
 
 ### Step 2: Switch the stored network to FP16 on MPS
-**Status:** not started.
+**Status:** development run passed (Nov 8); official run pending (after the code is committed).
 - Load `model_fp32.pt`. Make an FP32 copy on MPS and an FP16 copy on MPS (`.half().to("mps")`).
 - Preload the 10,000 test images once as a `(10000, 784)` tensor on MPS, FP32 for the FP32 model and FP16 for the FP16 model. Each evaluation is one forward pass under `torch.no_grad()`.
 - Record `fp32_mps_accuracy` and `fp16_mps_accuracy`. **Check** \|fp16 − fp32_mps\| ≤ 0.1 pp.
@@ -207,7 +212,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** the margin fails or the logits differ: record and ask Tony.
 
 ### Step 3: Build the single-bit flip (`src/bitflip.py`)
-**Status:** in progress. `flip`, `restore`, `fingerprint`, `field` and the hand tests are written and pass on CPU and MPS (Nov 8). The sanity check on the trained network waits for step 2.
+**Status:** hand tests pass on CPU and MPS; the sanity check on the trained network passed in the development runs (Nov 8). Official run pending.
 - **Address:** (tensor name, flat index in storage order, from 0). `nn.Linear` stores weights as (out, in):
   - `fc1.weight`: 128 × 784 = 100,352 elements; flat index `i` is hidden unit `i // 784`, pixel `i % 784`.
   - `fc2.weight`: 10 × 128 = 1,280 elements; flat index `i` is output class `i // 128`, hidden unit `i % 128`.
@@ -230,14 +235,14 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** a hand test or the sanity check fails.
 
 ### Step 4: Walk one weight through all 16 bits
-**Status:** not started.
+**Status:** development run passed (Nov 8); official run pending (after the code is committed).
 - With the role 1 generator, draw `rng.integers(0, 100352)` until the **FP16** value of that `fc1.weight` element has magnitude below 1. Record the chosen index and how many draws it took.
 - For bits 0 to 15: fingerprint → flip → evaluate on all 10,000 test images → classify against the reference → restore → verify the fingerprint.
 - **Output:** `logs/one_weight/one_weight.csv`, 16 rows, columns `bit, field, original_value, new_value, class, accuracy`, plus `run.json`. Use the same number formatting as step 5.
 - **Stop if** any fingerprint check fails.
 
 ### Step 5: Run the campaign (4,800 faults)
-**Status:** not started.
+**Status:** development run passed (Nov 8); official run pending (after the code is committed).
 - **Choose the elements first.** `rng2.choice(100352, 150, replace=False)` for `fc1.weight` (role 2) and `rng3.choice(1280, 150, replace=False)` for `fc2.weight` (role 3). Keep draw order (don't sort). Write `chosen_elements.csv` with columns `tensor, element_index, original_value` (fc1 rows first, then fc2) **before any flipping**.
 - **Loop:** for each of the 300 elements (CSV order), for bit 0..15:
 
@@ -260,7 +265,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Stop if** any check fails, or the two runs' CSVs differ (record it and ask Tony).
 
 ### Step 6: Summarize
-**Status:** not started.
+**Status:** development run passed (Nov 8); official run pending (after the code is committed).
 - Read only `faults.csv` (so the summary is reproducible from the committed file).
 - Per bit (n = 300): count and share of each class, each with a 95% Wilson interval, z = 1.96:
   - centre = (p + z²/2n) / (1 + z²/n)
@@ -287,11 +292,11 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 | Item | From | Status |
 |---|---|---|
 | Repo link; README with master seed, library versions and the reproduce command | Step 8 | not started |
-| File of the 300 chosen elements | `chosen_elements.csv` (step 5) | not started |
-| One-row-per-fault result file | `faults.csv` (step 5) | not started |
-| Statement that two same-seed runs gave identical result files | Step 5 check | not started |
-| One-weight table | Step 4 | not started |
-| Per-bit table and plot | Step 6 | not started |
+| File of the 300 chosen elements | `chosen_elements.csv` (step 5) | dev run done; official pending |
+| One-row-per-fault result file | `faults.csv` (step 5) | dev run done; official pending |
+| Statement that two same-seed runs gave identical result files | Step 5 check | dev runs identical; official pending |
+| One-weight table | Step 4 | dev run done; official pending |
+| Per-bit table and plot | Step 6 | dev run done; official pending |
 | Fault-model paragraph | Step 7 (Tony) | not started |
 | Short answers: (1) which bits cause SDC and which cause non-finite outputs, explained from FP16 storage; (2) which bits never changed a prediction, and why; (3) how FP32 storage would change the results; (4) what in the fault model would need changing for a diffusion model | Tony, from the data | not started |
 
@@ -299,7 +304,7 @@ Also on the doc's list for Tony this week: reading on fault vs error vs failure,
 
 ## 10. Open items (Tony)
 
-- [ ] **Tasks changed (Tony, Nov 8):** most of this week's code should be for the CIFAR-10 DDPM, not this MNIST network, which is why the repo was split. The Google Doc doesn't show the change yet (same revision as Nov 7, checked Nov 8 at 15:00 PST). Open: whether MNIST steps 1–8 still go ahead, and whether they're still due Nov 9. Ask Tony before starting step 1.
+- [x] **Tasks changed (Tony, Nov 8):** most of this week's code should be for the CIFAR-10 DDPM, not this MNIST network, which is why the repo was split. The Google Doc doesn't show the change yet (same revision as Nov 7, checked Nov 8 at 15:00 PST). **Resolved Nov 8: Tony said to continue the MNIST steps.**
 - [ ] Confirm input preprocessing (mean/std) with Aneesh and Parnian. Blocks step 1 only.
 - [ ] Ask Parnian whether the 0.1 pp FP16 margin is acceptable. Needed at step 2.
 - [ ] Add Aneesh and Parnian as GitHub collaborators (a doc task item).
@@ -340,8 +345,17 @@ Append one row per step or significant action. Newest last.
 | 2026-11-08 | Tony + Claude | Discussed CPU FP16 and FP32-on-GPU | Keep FP16 on MPS. Add FP32-on-MPS accuracy for the margin check (section 5, item 3). | `2484ce4` |
 | 2026-11-08 | Claude (Mac) | Wrote this plan and `README-mnist-week1.md` (now `README.md` here) | Committed with the pointer files (next row). | `72e467b` |
 | 2026-11-08 | Claude (Mac) | Added one-line pointers to this file in `AGENTS.md` and `CLAUDE.md`; committed and pushed all four files at Tony's request | `AGENTS.md` is read by most AI coding tools, `CLAUDE.md` by Claude Code. This Mac has no git identity configured, so the commit used Tony's identity from earlier commits via `git -c` (no config changed). | `72e467b` |
-| 2026-11-08 | Claude (Mac) | Setup: created `.venv/` at the repo root with `python3.12`; installed torch, torchvision, numpy, matplotlib, pytest; wrote `requirements-mac.txt`; added `data/` and `.pytest_cache/` to the root `.gitignore` | Check printed `arm64 2.15.0 True`. torch 2.15.0 is the same version as the PC's `2.15.0+cu134`. | uncommitted, on `72e467b` |
-| 2026-11-08 | Claude (Mac) | Step 0: wrote `src/bitflip.py` and `tests/test_bitflip.py`; ran `pytest tests/ -v -rs` | 47 passed, 0 skipped (23 on MPS). FP16 matmul runs on MPS; the int16 view has the same `data_ptr` as the weight; a flip changes the live weight and the layer's output; all four hand tests pass; flip + restore keeps the fingerprint for all 16 bits. A deliberately broken `flip` that writes to a copy left the weight at 0.5, so the tests would catch that bug. | uncommitted, on `72e467b` |
+| 2026-11-08 | Claude (Mac) | Setup: created `.venv/` at the repo root with `python3.12`; installed torch, torchvision, numpy, matplotlib, pytest; wrote `requirements-mac.txt`; added `data/` and `.pytest_cache/` to the root `.gitignore` | Check printed `arm64 2.15.0 True`. torch 2.15.0 is the same version as the PC's `2.15.0+cu134`. | run on `72e467b`; files committed in `f1f6bb5` |
+| 2026-11-08 | Claude (Mac) | Step 0: wrote `src/bitflip.py` and `tests/test_bitflip.py`; ran `pytest tests/ -v -rs` | 47 passed, 0 skipped (23 on MPS). FP16 matmul runs on MPS; the int16 view has the same `data_ptr` as the weight; a flip changes the live weight and the layer's output; all four hand tests pass; flip + restore keeps the fingerprint for all 16 bits. A deliberately broken `flip` that writes to a copy left the weight at 0.5, so the tests would catch that bug. | run on `72e467b`; files committed in `f1f6bb5` |
 | 2026-11-08 | Fork session (for Tony) | Split the repo into `cifar10/` and `mnist/` after Tony said this week's tasks changed (CIFAR-10 DDPM is the main code). The first attempt carried this session's untracked `src/bitflip.py` into `cifar10/` and was undone; redone after this session sent its file list. | This file and the handoff moved to `mnist/`; `README-mnist-week1.md` became `mnist/README.md`; root `README.md`, `AGENTS.md` and `CLAUDE.md` updated. File hashes unchanged; tests still 47 passed from `mnist/tests`. Committed and pushed by the fork with Tony's approval. | `f851270` |
 | 2026-11-08 | Claude (Mac) | Updated this file for the split: paths relative to `mnist/`, logs under `logs/<run>/`, step statuses, `check-mps` dropped in favour of the pytest run, open question about the task change | Step 1 waits for Tony's answer on whether MNIST continues. Included in the split commit. | `f851270` |
-| 2026-11-08 | Claude (Mac) | Recorded the split commit in this log | Still uncommitted: `src/bitflip.py`, `tests/test_bitflip.py`, `requirements-mac.txt` and the root `.gitignore` lines (`data/`, `.pytest_cache/`), plus this edit. | uncommitted, on `f851270` |
+| 2026-11-08 | Claude (Mac) | Recorded the split commit in this log | Still uncommitted: `src/bitflip.py`, `tests/test_bitflip.py`, `requirements-mac.txt` and the root `.gitignore` lines (`data/`, `.pytest_cache/`), plus this edit. All committed and pushed by the fork with Tony's approval; tests 47 passed before that commit. | `f1f6bb5` |
+| 2026-11-08 | Tony | Decided the MNIST steps continue despite the task change | Steps 1–6 start. Preprocessing (mean/std) is still unconfirmed with Aneesh and Parnian; retraining takes minutes if they pick differently. Plan: build and check everything with development runs, then commit the code and redo the official runs on a clean tree so every `run.json` names a commit that contains the code. | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | Claude (Mac, via a worker agent) | Wrote `configs/mnist.json`, `src/mnist_fault.py`, `tests/test_wilson.py`; ran the section 7 commands as **development runs** (dirty tree) | pytest 48 passed. All checks passed. Full numbers in the rows below; the run folders are in `logs/` (uncommitted). | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | dev run | Step 1: train_a, train_b | Parameter hash `4ee3056c…db923` in both (match). `fp32_cpu_accuracy` 0.9743. 6 CPU threads. About 5 s per training run. Derived seeds: train 3501612813, one_weight 1608880895, sample_fc1 2531023520, sample_fc2 4077134792. MNIST raw SHA-256: train-images `ba891046…`, train-labels `65a50cbb…`, t10k-images `0fa7898d…`, t10k-labels `ff7bcfd4…` (full hashes in `run.json`). | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | dev run | Steps 2–3 (inside one_weight and both campaigns) | `fp32_mps_accuracy` 0.9743, `fp16_mps_accuracy` 0.9743, difference 0.0 pp. Double evaluation byte-identical. Sanity check: `fc1.weight[89696]` (−0.9482421875 → −62144.0 at bit 14) changed 5,165 predictions, logits stayed finite; after restore, logits and fingerprint matched the reference. | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | dev run | Step 4: one weight | `fc1.weight[33719]` (hidden unit 43, pixel 7), value 0.0166168212890625, found on the first draw. 15 bits masked; bit 14 (→ 1089.0) sdc with accuracy 0.9744. | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | dev run | Step 5: campaign_a, campaign_b | About 10 s each on MPS. `chosen_elements.csv` and `faults.csv` byte-identical between the two runs. Totals: 3,437 masked, 1,264 sdc, 99 non_finite (all 99 at bit 14). CSVs had CRLF line endings in this run. | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | dev run | Step 6: summarize campaign_a | `per_bit.csv`, `per_field.csv`, `per_bit.png` written. Field totals (masked / sdc / non_finite): sign 125 / 175 / 0, exponent 587 / 814 / 99, mantissa 2725 / 275 / 0. | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | Claude (Mac) | Reviewed `mnist_fault.py` against this plan; independent check script (not using `mnist_fault.py` or `bitflip.py`) | Code matches sections 2, 4, 5 and 8. Independent checks all passed: the 300 elements re-derive from roles 2 and 3 in draw order; every `original_value` matches the FP16 weight; all 4,800 `new_value`s equal a numpy XOR flip; row order and columns are exact; per-bit counts and Wilson bounds match an independent computation; my own forward pass reproduces `fp16_mps_accuracy`; 5 faults re-run from scratch (masked, sdc, non_finite across fc1 and fc2) give the same class and accuracy as the CSV. | uncommitted, on `f1f6bb5` |
+| 2026-11-08 | Claude (Mac) | Switched all CSV writers to LF line endings | Development CSVs used the csv default CRLF. LF diffs cleanly and avoids line-ending conversion on the Windows PC. pytest 48 passed. The official runs will produce LF files, so their CSV hashes will differ from the dev hashes above. | uncommitted, on `f1f6bb5` |

@@ -1,0 +1,10 @@
+{
+  "master_seed": 20261104,
+  "roles": {"train": 0, "one_weight": 1, "sample_fc1": 2, "sample_fc2": 3},
+  "data": {"root": "data", "normalize_mean": 0.1307, "normalize_std": 0.3081},
+  "model": {"layers": [784, 128, 10], "activation": "relu"},
+  "train": {"device": "cpu", "dtype": "float32", "optimizer": "adam", "lr": 0.001,
+            "batch_size": 64, "epochs": 10, "loss": "cross_entropy"},
+  "eval": {"device": "mps", "dtype": "float16", "fp16_margin_pp": 0.1},
+  "campaign": {"elements_per_matrix": 150, "tensors": ["fc1.weight", "fc2.weight"], "bits": 16}
+}
