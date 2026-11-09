@@ -144,10 +144,6 @@ The same 300 weights are reused for every bit, so faults within a field aren't i
 - Inputs are normalized with mean 0.1307 and std 0.3081.
 - The device that runs the network can affect whether a large fault ends as non-finite or SDC, so these results are specific to the Mac GPU.
 
-## Who does what
-
-- **Tony:** commits and pushes; writes the fault-model paragraph and short answers; confirms the open choices with Aneesh and Parnian.
-- **Claude (AI assistant):** writes the code, runs the checks, supplies the numbers and keeps [`plan-mnist-week1.md`](plan-mnist-week1.md) up to date.
 
 ## Sources
 
