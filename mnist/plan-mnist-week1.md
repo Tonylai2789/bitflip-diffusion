@@ -278,7 +278,7 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 - **Caveat to note in the report:** the same 300 elements are reused for every bit, so faults inside a field group are not independent; the grouped intervals treat them as independent.
 
 ### Step 7: Fault-model paragraph
-**Status:** not started. **Tony writes it.**
+**Status:** done (Nov 9): Tony's paragraph is section 7 of `results-2026-11-09.md`. **Tony writes it.**
 - It must let another student repeat the experiment from the paragraph alone. Per the doc it must cover: what was flipped, where, which bits, how many, how they were chosen, how randomness was controlled, how values were restored, and how faults were classified.
 - **Agent's job:** check every fact against `configs/mnist.json`, `run.json` and this file (seed, role method, counts, device, preprocessing, interpretations in section 5). Report mismatches; don't rewrite the paragraph.
 
@@ -297,8 +297,8 @@ Step numbers follow the doc's cross-references (4 = one weight, 5 = campaign, 6 
 | Statement that two same-seed runs gave identical result files | Step 5 check | done (README, `logs/campaign_compare.json`) |
 | One-weight table | Step 4 | done (`logs/one_weight/one_weight.csv`) |
 | Per-bit table and plot | Step 6 | done (`per_bit.csv`, `per_field.csv`, `per_bit.png`; table in README) |
-| Fault-model paragraph | Step 7 (Tony) | not started |
-| Short answers: (1) which bits cause SDC and which cause non-finite outputs, explained from FP16 storage; (2) which bits never changed a prediction, and why; (3) how FP32 storage would change the results; (4) what in the fault model would need changing for a diffusion model | Tony, from the data | not started |
+| Fault-model paragraph | Step 7 (Tony) | done (`results-2026-11-09.md`, section 7) |
+| Short answers: (1) which bits cause SDC and which cause non-finite outputs, explained from FP16 storage; (2) which bits never changed a prediction, and why; (3) how FP32 storage would change the results; (4) what in the fault model would need changing for a diffusion model | Tony, from the data | done (`results-2026-11-09.md`, section 8) |
 
 Also on the doc's list for Tony this week: reading on fault vs error vs failure, masked and unmasked faults, and silent data corruption.
 
@@ -368,3 +368,4 @@ Append one row per step or significant action. Newest last.
 | 2026-11-09 | Claude (Mac) | Made the GitHub repo public at Tony's request (`gh repo edit --visibility public`), after flagging that the team doc asks for a private repo and that history includes his email, a Windows path and the team Google Doc link | Visible without logging in (anonymous API and raw-file checks return 200). Aneesh (`Aneesh31`) already had write access; Parnian is not a collaborator. All results and reports were already pushed; model weights, `reference_predictions.npy` and `data/` stay git-ignored. | the commit that added this row |
 | 2026-11-09 | Claude (Mac) | Pulled Tony's README edit (`1fe8b62`). Wrote `results-week1.md`, a results-only file for Parnian covering hand-in items 1–5 (repo and reproduction, chosen elements and per-fault files, identical reruns, one-weight table, per-bit table and plot), generated from the result files. Re-read the team doc first: its revision changed since Nov 8, but the Tasks (Nov 4 – Nov 9) section and hand-in list still match section 9. | Every table re-derived from `faults.csv` and `one_weight.csv` with an independent Wilson computation: no mismatches; all links resolve; campaign file hashes re-checked. The fault-model paragraph and short answers aren't in it. Committed at Tony's request (not pushed). | the commit that added this row |
 | 2026-11-09 | Claude (Mac) | Added short answers 2–4 to `conclusions.md` at Tony's request (short answer 1 was already there). For answer 3, ran a one-off FP32 version of the campaign on MPS from a scratch script (same 300 elements, all 32 bits, FP32 reference): 7,871 masked / 1,630 sdc / 99 non_finite; bits 0–15 all masked; bit 30 gave 181 sdc + 99 non_finite, all in `fc2`, matching FP16 bit 14. | The FP32 run isn't in the repo and wasn't repeated; `conclusions.md` labels it a quick check. Not committed. | — |
+| 2026-11-09 | Claude (Mac) | At Tony's request, merged `results-week1.md` and `conclusions.md` into one file, `results-2026-11-09.md` (results as sections 1–6, the fault-model paragraph as section 7, the short answers as 8.1–8.4), and removed the two old files. Kept Tony's uncommitted trims to `results-week1.md` (intro line, reading notes and open questions for Parnian removed). Pointed `README.md` to the new file and updated its status; marked step 7 and the last two hand-in rows done. | Text carried over unchanged apart from headings; every link and the plot path resolve. `report-week1.md` left as is. | the commit that added this row |

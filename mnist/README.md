@@ -1,8 +1,8 @@
 # MNIST bit-flip study (week of Nov 4 – Nov 9, 2026)
 
-A short guide for people. The full step-by-step plan, written for AI agents, is in [`plan-mnist-week1.md`](plan-mnist-week1.md). A plain-language report of the whole week, step by step, is in [`report-week1.md`](report-week1.md).
+A short guide for people. The full step-by-step plan, written for AI agents, is in [`plan-mnist-week1.md`](plan-mnist-week1.md). A plain-language report of the whole week, step by step, is in [`report-week1.md`](report-week1.md). All the results, the fault-model paragraph and the four short answers are in one file: [`results-2026-11-09.md`](results-2026-11-09.md).
 
-**Status (Nov 8):** the official runs are done and every check passed (results below). Still to do: Tony's fault-model paragraph and four short answers. The plan's work log has the details. **Due:** Monday, Nov 9.
+**Status (Nov 9):** the official runs are done and every check passed (results below). Tony's fault-model paragraph and four short answers are written. The plan's work log has the details. **Due:** Monday, Nov 9.
 
 ## What we're doing
 
