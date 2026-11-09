@@ -1,4 +1,4 @@
-# Report: the MNIST bit-flip study (week of Nov 4 – 9, 2026)
+# Walkthrough: the MNIST bit-flip study (week of Nov 4 – 9, 2026)
 
 A plain-language summary of what was done this week and why, written for a reader who knows basic neural networks and not much else. Written Nov 8, 2026; the results come from the official runs at commit `757c67a`. For full detail see [`plan-mnist-week1.md`](plan-mnist-week1.md); for the results tables and the plot see [`README.md`](README.md).
 
