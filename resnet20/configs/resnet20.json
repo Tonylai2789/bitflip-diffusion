@@ -1,0 +1,19 @@
+{
+  "_status": "Settled by Tony on 2026-11-17: see plan-resnet20-week2.md section 4 (D1-D9).",
+  "master_seed": 20261104,
+  "roles": {"train_fashion_mnist": 10, "train_cifar10": 11, "one_weight": 12,
+            "sample_stage1": 13, "sample_stage2": 14, "sample_stage3": 15, "sample_fc": 16},
+  "datasets": ["fashion_mnist", "cifar10"],
+  "data": {"root": "data", "normalize": "per-channel mean/std computed from the training set, recorded in run.json"},
+  "model": {"name": "resnet20", "blocks_per_stage": 3, "widths": [16, 32, 64], "shortcut": "A", "num_classes": 10},
+  "train": {"device": "cuda", "dtype": "float32", "optimizer": "sgd", "lr": 0.1, "momentum": 0.9, "weight_decay": 0.0001,
+            "lr_milestones": [80, 120], "lr_gamma": 0.1, "epochs": 160, "batch_size": 128, "loss": "cross_entropy",
+            "augment": {"cifar10": ["random_crop_pad4", "horizontal_flip"], "fashion_mnist": []}},
+  "eval": {"device": "cuda", "dtype": "float16", "fp16_margin_pp": 0.1, "cudnn_deterministic": true},
+  "campaign": {"elements_per_group": 150, "bits": 16,
+               "groups": {"stage1": ["conv1.weight", "layer1.*conv*.weight"],
+                          "stage2": ["layer2.*conv*.weight"],
+                          "stage3": ["layer3.*conv*.weight"],
+                          "fc": ["fc.weight"]},
+               "excluded": ["biases", "batch-norm weight, bias, running_mean, running_var"]}
+}

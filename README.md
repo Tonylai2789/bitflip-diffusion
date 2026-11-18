@@ -18,7 +18,7 @@ Tier S model: [`google/ddpm-cifar10-32`](https://huggingface.co/google/ddpm-cifa
 
 ## Layout
 
-The repo holds two separate projects. Keep their code apart.
+The repo holds three separate projects. Keep their code apart.
 
 ```
 cifar10/        Tier S: DDPM on CIFAR-10 (results machine: Windows RTX 5090 PC)
@@ -29,6 +29,8 @@ cifar10/        Tier S: DDPM on CIFAR-10 (results machine: Windows RTX 5090 PC)
   requirements.txt   pinned PC stack
 mnist/          small MNIST network bit-flip study (results machine: MacBook M5 Pro)
                 see mnist/README.md
+resnet20/       Week 2: ResNet-20 bit-flip study on Fashion-MNIST and CIFAR-10
+                (results machine: Windows RTX 5090 PC; own .venv), see resnet20/README.md
 ```
 
 ## Setup (results machine: RTX 5090)
