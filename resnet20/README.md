@@ -2,7 +2,7 @@
 
 A short guide for people. The full step-by-step plan for AI agents, with every decision and a work log, is [`plan-resnet20-week2.md`](plan-resnet20-week2.md).
 
-**Status (Nov 17):** the code is written and a full practice run on Fashion-MNIST worked: training took 6 minutes (93.0% test accuracy), and the 9,600-fault test took 4 minutes and gave identical results both times. These practice numbers aren't official. The official Fashion-MNIST and CIFAR-10 runs come next, after the code is committed. Commands are in the plan, section 6.1.
+**Status (Nov 18):** the official runs are done for both datasets, from committed code, and every check passed. Test accuracy in FP16: Fashion-MNIST 93.32%, CIFAR-10 91.35%. Each 9,600-fault test gave identical results both times. Out of 9,600 faults, answers changed silently (SDC) in 4,525 on Fashion-MNIST and 6,172 on CIFAR-10. Details are in the plan's work log.
 
 ## What we're doing
 

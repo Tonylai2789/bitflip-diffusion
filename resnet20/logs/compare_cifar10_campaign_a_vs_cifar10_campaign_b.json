@@ -1,0 +1,15 @@
+{
+  "run_a": "logs\\cifar10_campaign_a",
+  "run_b": "logs\\cifar10_campaign_b",
+  "sha256": {
+    "chosen_elements.csv": [
+      "18f9e49ce68c348f195fac7529ea0978538298c2275cfd273a5f83085e358332",
+      "18f9e49ce68c348f195fac7529ea0978538298c2275cfd273a5f83085e358332"
+    ],
+    "faults.csv": [
+      "dbd501f495612d508ef0e96abc4a8441ebba4c321403145d56f96ddb9e34808a",
+      "dbd501f495612d508ef0e96abc4a8441ebba4c321403145d56f96ddb9e34808a"
+    ]
+  },
+  "identical": true
+}

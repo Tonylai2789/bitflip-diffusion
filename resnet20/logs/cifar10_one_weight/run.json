@@ -1,0 +1,79 @@
+{
+  "command": "src/resnet20_fault.py one-weight --model logs/cifar10_train/model_fp32.pt --run-name cifar10_one_weight",
+  "git_commit": "27ee894dd925b47c1a8ff2568421082bd92aac7a",
+  "git_dirty": false,
+  "master_seed": 20261104,
+  "roles": {
+    "train_fashion_mnist": 10,
+    "train_cifar10": 11,
+    "one_weight": 12,
+    "sample_stage1": 13,
+    "sample_stage2": 14,
+    "sample_stage3": 15,
+    "sample_fc": 16
+  },
+  "derived_seeds": {
+    "train_fashion_mnist": 3024530099,
+    "train_cifar10": 3891623888,
+    "one_weight": 97287806,
+    "sample_stage1": 2723920832,
+    "sample_stage2": 2022950003,
+    "sample_stage3": 4037592387,
+    "sample_fc": 412946436
+  },
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "nvidia_driver": "621.01",
+  "torch_cuda_build": "13.4",
+  "cudnn": 92600,
+  "cudnn_deterministic": true,
+  "cudnn_benchmark": false,
+  "os": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.10",
+  "packages": {
+    "torch": "2.15.0+cu134",
+    "torchvision": "0.29.2+cu134",
+    "numpy": "2.5.4"
+  },
+  "dataset": "cifar10",
+  "raw_sha256": {
+    "cifar-10-python.tar.gz": "6d958be074577803d12ecdefd02955f39262c83c16fe9348329d7fe0b5c001ce"
+  },
+  "normalize_mean": [
+    0.49139968987818977,
+    0.48215841962618694,
+    0.4465309242282978
+  ],
+  "normalize_std": [
+    0.2470322375876608,
+    0.24348513325191937,
+    0.2615878469791355
+  ],
+  "model_path": "logs/cifar10_train/model_fp32.pt",
+  "model_file_sha256": "e3909be793a4eee803772c68f2b3ce9cb031270989bfc0bc6106f514731d443d",
+  "model_param_sha256": "0c041950710434ea130b2361a5e489bcaa792b6355ef6673dd00cca4a351887c",
+  "fp32_cuda_accuracy": 0.9138,
+  "fp16_cuda_accuracy": 0.9135,
+  "fp16_fp32_diff_pp": 0.03,
+  "reference_logits_sha256": "e923c0633125fc127329f635c2811417e58108350b7b74ba16650441cce9b444",
+  "reference_predictions_sha256": "a323cd66cab62761d578012a1416af70e326a644d5507048909e99ea6ff0335f",
+  "double_eval_identical": true,
+  "sanity_check": {
+    "tensor": "fc.weight",
+    "element_index": 200,
+    "bit": 14,
+    "original_value": "0.9970703125",
+    "new_value": "65344.0",
+    "logits_changed": true,
+    "predictions_changed": 8991,
+    "logits_finite": false,
+    "accuracy_flipped": 0.1011,
+    "restored_logits_match": true,
+    "restored_fingerprint_match": true
+  },
+  "tensor": "layer3.1.conv1.weight",
+  "element_index": 28942,
+  "draws": 1,
+  "wall_time_s": 2.598,
+  "timestamp": "2026-11-18T13:03:36-08:00"
+}

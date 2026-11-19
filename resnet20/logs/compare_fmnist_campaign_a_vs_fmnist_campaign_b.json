@@ -1,0 +1,15 @@
+{
+  "run_a": "logs\\fmnist_campaign_a",
+  "run_b": "logs\\fmnist_campaign_b",
+  "sha256": {
+    "chosen_elements.csv": [
+      "ed880215147e6f618bd94e5317a8de34ac9ececf1d30fa0e647749ef44c01ea4",
+      "ed880215147e6f618bd94e5317a8de34ac9ececf1d30fa0e647749ef44c01ea4"
+    ],
+    "faults.csv": [
+      "3eed8b180aa9b0f1ee1bb39f4660e0bb9e3ceae6c26aad0f793665f45db375cc",
+      "3eed8b180aa9b0f1ee1bb39f4660e0bb9e3ceae6c26aad0f793665f45db375cc"
+    ]
+  },
+  "identical": true
+}
