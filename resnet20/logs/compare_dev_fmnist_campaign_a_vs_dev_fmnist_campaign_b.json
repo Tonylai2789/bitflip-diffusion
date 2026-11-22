@@ -1,0 +1,15 @@
+{
+  "run_a": "logs\\dev_fmnist_campaign_a",
+  "run_b": "logs\\dev_fmnist_campaign_b",
+  "sha256": {
+    "chosen_elements.csv": [
+      "e6fbd2c14b004b13f3b536db2b9f2afbe228836b0cb3762b0573d5d06106e5f6",
+      "e6fbd2c14b004b13f3b536db2b9f2afbe228836b0cb3762b0573d5d06106e5f6"
+    ],
+    "faults.csv": [
+      "a29b73968e459420d1562c3c0bc085d235bf2d6b7498385c0498c1a79ce278d5",
+      "a29b73968e459420d1562c3c0bc085d235bf2d6b7498385c0498c1a79ce278d5"
+    ]
+  },
+  "identical": true
+}

@@ -1,0 +1,78 @@
+{
+  "command": "src/resnet20_fault.py one-weight --model logs/dev_fmnist_train/model_fp32.pt --run-name dev_fmnist_one_weight",
+  "git_commit": "5c79b5a066cc4efe28c5c13fea4bc7b172ad8346",
+  "git_dirty": true,
+  "master_seed": 20261104,
+  "roles": {
+    "train_fashion_mnist": 10,
+    "train_cifar10": 11,
+    "one_weight": 12,
+    "sample_stage1": 13,
+    "sample_stage2": 14,
+    "sample_stage3": 15,
+    "sample_fc": 16
+  },
+  "derived_seeds": {
+    "train_fashion_mnist": 3024530099,
+    "train_cifar10": 3891623888,
+    "one_weight": 97287806,
+    "sample_stage1": 2723920832,
+    "sample_stage2": 2022950003,
+    "sample_stage3": 4037592387,
+    "sample_fc": 412946436
+  },
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "nvidia_driver": "621.01",
+  "torch_cuda_build": "13.4",
+  "cudnn": 92600,
+  "cudnn_deterministic": true,
+  "cudnn_benchmark": false,
+  "os": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.10",
+  "packages": {
+    "torch": "2.15.0+cu134",
+    "torchvision": "0.29.2+cu134",
+    "numpy": "2.5.4"
+  },
+  "dataset": "fashion_mnist",
+  "raw_sha256": {
+    "FashionMNIST/raw/train-images-idx3-ubyte": "c59f468a2f672dc815687fe0f83887768d799fd8a3f3276145d20f83aa44d888",
+    "FashionMNIST/raw/train-labels-idx1-ubyte": "bad3541b69d912435c50bb6ba87bec294ff4f6a2e1246121d8633921760443d9",
+    "FashionMNIST/raw/t10k-images-idx3-ubyte": "5b4141f0afbad91edebe8549f8fcffe087ea10ca49f1dbef5c9a5cd8815ce37b",
+    "FashionMNIST/raw/t10k-labels-idx1-ubyte": "0402a96d92fd2663957122ceb108a494c5af83dab82d92729df917d7dec38c34"
+  },
+  "normalize_mean": [
+    0.28604060219395294
+  ],
+  "normalize_std": [
+    0.3530242532903864
+  ],
+  "model_path": "logs/dev_fmnist_train/model_fp32.pt",
+  "model_file_sha256": "f98daf1f90ef56769b503ccc36c624f2d0dcb5644a2c3703a28f9dc8dc68aa45",
+  "model_param_sha256": "c6892c9d546e7774552269485f483be8f2d08506f0afcbb05144c3057158d3c8",
+  "fp32_cuda_accuracy": 0.9298,
+  "fp16_cuda_accuracy": 0.9298,
+  "fp16_fp32_diff_pp": 0.0,
+  "reference_logits_sha256": "7f6aba80ee7c05daf341682701e03ebdb0012eb29e707fc5feddf4e6365eaeed",
+  "reference_predictions_sha256": "8e5e7f94b52c1c58f5b56b8f54120bc98c61381fb9173328abd187c8272329f6",
+  "double_eval_identical": true,
+  "sanity_check": {
+    "tensor": "fc.weight",
+    "element_index": 85,
+    "bit": 14,
+    "original_value": "0.9462890625",
+    "new_value": "62016.0",
+    "logits_changed": true,
+    "predictions_changed": 9006,
+    "logits_finite": false,
+    "accuracy_flipped": 0.1002,
+    "restored_logits_match": true,
+    "restored_fingerprint_match": true
+  },
+  "tensor": "layer3.1.conv1.weight",
+  "element_index": 29070,
+  "draws": 1,
+  "wall_time_s": 1.211,
+  "timestamp": "2026-11-17T21:24:44-08:00"
+}
