@@ -43,7 +43,7 @@ Each dataset: 9,600 faults (600 weights × 16 bits), each one evaluated on all 1
 
 Bit 14 is the only bit that gave non-finite outputs: 9.7% of its faults on Fashion-MNIST and 21.3% on CIFAR-10. The rest of bit 14's faults are SDC (0% masked).
 
-**SDC by where the weight sits** (600 faults per group):
+**SDC by where the weight sits** (2,400 faults per group: 150 weights × 16 bits):
 
 | Group | Weights in group | Fashion-MNIST SDC | CIFAR-10 SDC | Non-finite (F-MNIST / CIFAR-10) |
 |---|---|---|---|---|
