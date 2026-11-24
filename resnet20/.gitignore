@@ -1,0 +1,2 @@
+# Exhaustive-run fault logs are ~335 MB each (over GitHub's 100 MB limit); kept on the RTX 5090 PC only.
+logs/*exhaustive*/faults.csv

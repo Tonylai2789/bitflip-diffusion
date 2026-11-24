@@ -5,6 +5,9 @@
     python src/resnet20_fault.py campaign --model logs/fmnist_train/model_fp32.pt --run-name fmnist_campaign_a
     python src/resnet20_fault.py summarize logs/fmnist_campaign_a
     python src/resnet20_fault.py compare logs/fmnist_campaign_a logs/fmnist_campaign_b
+    python src/resnet20_fault.py exhaustive --model logs/fmnist_train/model_fp32.pt --run-name exhaustive_fmnist
+    python src/resnet20_fault.py exhaustive --resume logs/exhaustive_fmnist
+    python src/resnet20_fault.py overlap logs/exhaustive_fmnist logs/fmnist_campaign_a
 
 Datasets: fashion_mnist, cifar10. Settings come from configs/resnet20.json. Each run writes logs/<run_name>/ and
 refuses to overwrite it. GPU training is not bit-repeatable (Week2 tab), so each dataset is trained once and every
@@ -514,6 +517,118 @@ def cmd_campaign(args):
     print(f"campaign done: {totals}")
 
 
+# ---------------------------------------------------------------- exhaustive (every element, every bit)
+
+def all_elements(model):
+    """Every faultable element in a fixed order: groups in config order, tensors in group order, elements 0..n-1."""
+    for gname, names in groups(model).items():
+        for name in names:
+            for i in range(model.get_parameter(name).numel()):
+                yield gname, name, i
+
+
+def truncate_to_elements(path, bits):
+    """Cut faults.csv back to its header plus whole elements (a multiple of `bits` complete rows), dropping a
+    partly written last element or line. Returns the number of whole elements kept."""
+    data = Path(path).read_bytes()
+    lines = data.split(b"\n")[:-1]  # complete lines only; the last piece is empty or a partial line
+    require(len(lines) >= 1, f"{path} has no header")
+    elements = (len(lines) - 1) // bits
+    keep = sum(len(line) + 1 for line in lines[:1 + elements * bits])
+    if keep != len(data):
+        with open(path, "rb+") as f:
+            f.truncate(keep)
+    return elements
+
+
+def code_hashes():
+    """SHA-256 of the files that decide a fault's result; a resume must find them unchanged. (The git commit may
+    move on during a multi-day run, e.g. work-log or analysis commits, so it is recorded but not required.)"""
+    return {f: sha256_file(ROOT / f) for f in ("src/resnet20_fault.py", "src/bitflip.py", "configs/resnet20.json")}
+
+
+def cmd_exhaustive(args):
+    """Every faultable element through all 16 bits, same inject() as the campaign. --resume continues a stopped run."""
+    t0 = time.perf_counter()
+    bits = CFG["campaign"]["bits"]
+    if args.resume:
+        out = Path(args.resume)
+        start = json.loads((out / "run_start.json").read_text())
+        m16, x16, y, ref_preds, info = prepare(start["model_path"])
+        for k in ("reference_logits_sha256", "model_param_sha256"):
+            require(info[k] == start[k], f"cannot resume: {k} changed from {start[k]} to {info[k]}")
+        require(code_hashes() == start["code_sha256"], "cannot resume: fault-injection code or config changed")
+        done = truncate_to_elements(out / "faults.csv", bits)
+        start["resumes"].append({"timestamp": datetime.now().astimezone().isoformat(timespec="seconds"),
+                                 "from_element": done, "git_commit": info["git_commit"],
+                                 "git_dirty": info["git_dirty"], "command": shlex.join(sys.argv)})
+    else:
+        require(args.model and args.run_name, "exhaustive needs --model and --run-name, or --resume")
+        out = new_run_dir(args.run_name)
+        m16, x16, y, ref_preds, info = prepare(args.model)
+        np.save(out / "reference_predictions.npy", ref_preds.numpy())
+        n_elements = sum(1 for _ in all_elements(m16))
+        start = dict(info, groups=groups(m16), planned_faults=n_elements * bits, code_sha256=code_hashes(),
+                     resumes=[])
+        with open(out / "faults.csv", "w", newline="") as f:
+            csv.writer(f, lineterminator="\n").writerow(
+                ["group", "tensor", "element_index", "bit", "original_value", "new_value", "class", "accuracy"])
+        done = 0
+    (out / "run_start.json").write_text(json.dumps(start, indent=2) + "\n")
+    n_elements = start["planned_faults"] // bits
+
+    t_loop = time.perf_counter()
+    with open(out / "faults.csv", "a", newline="") as f:
+        wr = csv.writer(f, lineterminator="\n")
+        for k, (gname, name, i) in enumerate(all_elements(m16)):
+            if k < done:
+                continue
+            for bit in range(bits):
+                old, new, cls, correct = inject(m16, name, i, bit, x16, y, ref_preds)
+                wr.writerow([gname, name, i, bit, repr(float(old)), repr(float(new)), cls, fmt_acc(correct, len(y))])
+            f.flush()  # a stopped run loses at most the element in progress
+            if (k + 1) % 1000 == 0:
+                rate = (k + 1 - done) / (time.perf_counter() - t_loop)
+                print(f"{k + 1}/{n_elements} elements ({name})  {rate * bits:.1f} faults/s  "
+                      f"ETA {(n_elements - k - 1) / rate / 3600:.1f} h", flush=True)
+    loop_s = time.perf_counter() - t_loop
+
+    totals, rows = dict.fromkeys(CLASSES, 0), 0
+    with open(out / "faults.csv", newline="") as f:
+        for r in csv.DictReader(f):
+            totals[r["class"]] += 1
+            rows += 1
+    require(rows == start["planned_faults"], f"faults.csv has {rows} rows, expected {start['planned_faults']}")
+    info = dict(start, class_totals=totals, last_segment_loop_wall_time_s=round(loop_s, 3),
+                faults_csv_sha256=sha256_file(out / "faults.csv"), faults_csv_bytes=(out / "faults.csv").stat().st_size)
+    write_run_json(out, info, t0)
+    print(f"exhaustive done: {rows} faults {totals}")
+
+
+def cmd_overlap(args):
+    """Every campaign row must appear unchanged in the exhaustive run. Writes logs/overlap_<a>_vs_<b>.json."""
+    ex, camp = Path(args.exhaustive_run), Path(args.campaign_run)
+    with open(camp / "faults.csv", newline="") as f:
+        want = {(r["tensor"], r["element_index"], r["bit"]): r for r in csv.DictReader(f)}
+    n_campaign, matched, mismatched = len(want), 0, []
+    with open(ex / "faults.csv", newline="") as f:
+        for r in csv.DictReader(f):
+            w = want.pop((r["tensor"], r["element_index"], r["bit"]), None)
+            if w is None:
+                continue
+            if w == r:
+                matched += 1
+            else:
+                mismatched.append({"campaign": w, "exhaustive": r})
+    report = {"exhaustive_run": str(ex), "campaign_run": str(camp), "campaign_rows": n_campaign, "matched": matched,
+              "mismatched": len(mismatched), "missing_from_exhaustive": len(want), "first_mismatches": mismatched[:20]}
+    out = ROOT / "logs" / f"overlap_{ex.name}_vs_{camp.name}.json"
+    require(not out.exists(), f"{out} already exists")
+    out.write_text(json.dumps(report, indent=2) + "\n")
+    print(json.dumps({k: v for k, v in report.items() if k != "first_mismatches"}, indent=2))
+    sys.exit(0 if matched == n_campaign else 1)
+
+
 # ---------------------------------------------------------------- summarize
 
 def wilson(k, n, z=1.96):
@@ -621,10 +736,18 @@ def main():
     p = sub.add_parser("compare")
     p.add_argument("run_a")
     p.add_argument("run_b")
+    p = sub.add_parser("exhaustive")
+    p.add_argument("--model")
+    p.add_argument("--run-name")
+    p.add_argument("--resume", metavar="RUN_DIR")
+    p = sub.add_parser("overlap")
+    p.add_argument("exhaustive_run")
+    p.add_argument("campaign_run")
     args = ap.parse_args()
     require(torch.cuda.is_available(), "CUDA is not available; this study runs on the RTX 5090 only")
     {"train": cmd_train, "one-weight": cmd_one_weight, "campaign": cmd_campaign,
-     "summarize": cmd_summarize, "compare": cmd_compare}[args.cmd](args)
+     "summarize": cmd_summarize, "compare": cmd_compare,
+     "exhaustive": cmd_exhaustive, "overlap": cmd_overlap}[args.cmd](args)
 
 
 if __name__ == "__main__":
